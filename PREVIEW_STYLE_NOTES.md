@@ -1,0 +1,1 @@
+Design target: the private Package Review Studio preview. The website uses the same dark review banner, sticky white topbar, Manrope/Inter typography, blue-and-white cards, multi-view navigation, architecture blocks, comparison tables, route timelines, structured inclusion states and admin workflow presentation.
