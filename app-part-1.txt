@@ -1,0 +1,90 @@
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const esc = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+const money = (value) => `${esc(data.settings.currency)} ${Number(value || 0).toLocaleString()}`;
+
+const visibleCategories = () => data.categories.filter((item) => item.visible).sort((a, b) => a.order - b.order);
+const visiblePackages = () => data.packages.filter((item) => item.visible).sort((a, b) => a.order - b.order);
+const headerVisible = () => data.sections.find((section) => section.type === 'header')?.visible !== false;
+const footerVisible = () => data.sections.find((section) => section.type === 'footer')?.visible !== false;
+
+let selectedCategoryId = visibleCategories()[0]?.id || 'canal';
+let selectedPackageId = visiblePackages().find((item) => item.categoryId === selectedCategoryId)?.id || visiblePackages()[0]?.id;
+let activeView = document.body.dataset.page === 'package' ? 'experience' : 'overview';
+
+const requestedSlug = new URLSearchParams(location.search).get('slug');
+if (requestedSlug) {
+  const requested = visiblePackages().find((item) => item.slug === requestedSlug);
+  if (requested) {
+    selectedPackageId = requested.id;
+    selectedCategoryId = requested.categoryId;
+    activeView = 'experience';
+  }
+}
+
+function applyTheme() {
+  document.documentElement.style.setProperty('--blue', data.settings.primaryColor === '#0b1f33' ? '#2563eb' : (data.settings.primaryColor || '#2563eb')); 
+  document.documentElement.style.setProperty('--accent', data.settings.accentColor || '#d6a756');
+  document.title = data.settings.brandName || 'Get Your Guide Dubai';
+}
+
+function selectedPackage() {
+  return visiblePackages().find((item) => item.id === selectedPackageId) || visiblePackages()[0];
+}
+
+function selectedCategory() {
+  return visibleCategories().find((item) => item.id === selectedCategoryId) || visibleCategories()[0];
+}
+
+function header() {
+  if (!headerVisible()) return '';
+  return `
+    <div class="review-banner">
+      <div><strong>Dubai experiences, clearly compared</strong><span>Canal cruises • Marina cruises • Private yachts • Desert safari</span></div>
+      <span class="status-pill">Admin controlled</span>
+    </div>
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="${esc(data.settings.brandName)}">
+        ${data.settings.logoUrl ? `<img class="brand-logo" src="${esc(data.settings.logoUrl)}" alt="">` : '<span class="brand-mark">G</span>'}
+        <span><b>${esc(data.settings.brandName)}</b><small>${esc(data.settings.tagline)}</small></span>
+      </a>
+      <nav class="topnav" aria-label="Website navigation">
+        <button class="nav-btn ${activeView === 'overview' ? 'active' : ''}" data-view="overview">Overview</button>
+        <button class="nav-btn ${activeView === 'comparison' ? 'active' : ''}" data-view="comparison">Compare packages</button>
+        <button class="nav-btn ${activeView === 'experience' ? 'active' : ''}" data-view="experience">Experience details</button>
+        <button class="nav-btn ${activeView === 'workflow' ? 'active' : ''}" data-view="workflow">Admin control</button>
+      </nav>
+      <a class="top-whatsapp" target="_blank" rel="noopener" href="https://wa.me/${esc(data.settings.whatsappNumber)}">WhatsApp</a>
+      <button class="mobile-nav" id="mobileNav" aria-label="Open navigation">☰</button>
+    </header>`;
+}
+
+function overviewView() {
+  const categories = visibleCategories();
+  const packages = visiblePackages();
+  const featured = packages.filter((item) => item.featured).slice(0, 3);
+  const canalCount = packages.filter((item) => item.categoryId === 'canal').length;
+  const marinaCount = packages.filter((item) => item.categoryId === 'marina').length;
+  return `
+    <section class="view ${activeView === 'overview' ? 'active' : ''}" id="view-overview">
+      <div class="hero review-wrap">
+        <div class="hero-copy">
+          <p class="eyebrow">Dubai booking studio</p>
+          <h1>Choose the right experience without guessing.</h1>
+          <p class="lead">Compare package levels, prices, routes, inclusions and optional upgrades in one premium booking experience.</p>
+          <div class="hero-actions">
+            <button class="primary" data-go="comparison">Compare all packages</button>
+            <button class="secondary" data-go="experience">Open package details</button>
+          </div>
+          <div class="safety-row"><span>✓ Clear package levels</span><span>✓ Flexible add-ons</span><span>✓ Direct WhatsApp booking</span></div>
+        </div>
+        <div class="hero-panel">
+          <div class="hero-panel-head"><span>Live website summary</span><b>${packages.length} packages</b></div>
+          <div class="metric-grid">
+            <div><strong>${canalCount}</strong><span>Canal package levels</span></div>
+            <div><strong>${marinaCount}</strong><span>Marina package levels</span></div>
+            <div><strong>${packages.filter((item) => item.categoryId === 'yachts').length}</strong><span>Private yacht charters</span></div>
+            <div><strong>${packages.filter((item) => item.categoryId === 'safari').length}</strong><span>Desert safari options</span></div>
+          </div>
+          <div class="progress"><span style="width:100%"></span></div>
+          <p>Every package, section, price and inclusion can be controlled from the admin panel.</p>
