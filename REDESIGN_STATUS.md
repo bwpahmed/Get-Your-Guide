@@ -1,0 +1,1 @@
+The public website is being rebuilt to match the premium Package Review Studio design language. The current main branch is being updated with the same multi-view layout, package comparison, experience details and full-control admin presentation.
