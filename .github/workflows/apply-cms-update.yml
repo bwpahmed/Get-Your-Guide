@@ -1,0 +1,36 @@
+name: Apply Complete CMS Update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.cms-update/apply.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Decode and extract update
+        run: |
+          cat .cms-update/chunk-* | base64 -d > /tmp/get-your-guide-cms-update.tar.gz
+          rm -f app-loader.js app-part-*.txt styles-loader.css styles-part-*.css nav-fix.js
+          tar -xzf /tmp/get-your-guide-cms-update.tar.gz -C .
+          rm -rf .cms-update
+      - name: Validate website and CMS
+        run: npm run check
+      - name: Commit completed update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add complete hidden CMS and package content"
+          git push origin HEAD:main
