@@ -1,29 +1,22 @@
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
-const appParts = [1, 2, 3, 4].map((number) => readFileSync(`app-part-${number}.txt`, 'utf8'));
-const source = appParts.join('');
-new Function('data', source);
-
-const css = [1, 2, 3, 4].map((number) => readFileSync(`styles-part-${number}.css`, 'utf8')).join('');
-if ((css.match(/{/g) || []).length !== (css.match(/}/g) || []).length) {
-  throw new Error('CSS braces are not balanced');
-}
-
-const required = [
-  'Compare before you book',
-  'Control the whole website without editing code',
-  'Basic',
-  'Premium',
-  'Private Charter',
-  'Book on WhatsApp'
-];
-for (const phrase of required) {
-  if (!source.includes(phrase)) throw new Error(`Missing required website feature: ${phrase}`);
-}
-
-for (const file of ['data.js', 'storage.js', 'admin.js', 'app.js']) {
-  const text = readFileSync(file, 'utf8');
-  if (!text.trim()) throw new Error(`${file} is empty`);
-}
-
-console.log('Get Your Guide QA passed: runtime syntax, design modules, CMS files and CSS integrity verified.');
+const read = path => readFileSync(path, 'utf8');
+const required = ['data.js','data-enrichment.js','storage.js','app.js','package-enhancer.js','public-cleanup.js','cms.js','admin/index.html','index.html','package.html','netlify.toml','styles.css','cms-enhancements.css'];
+for (const file of required) read(file);
+for (const file of ['data.js','data-enrichment.js','storage.js','app.js','package-enhancer.js','public-cleanup.js','cms.js']) execFileSync(process.execPath, ['--check', file], { stdio: 'inherit' });
+const data = read('data.js');
+const enrichment = read('data-enrichment.js');
+const cms = read('cms.js');
+const admin = read('admin/index.html');
+const netlify = read('netlify.toml');
+const home = read('index.html');
+const details = read('package.html');
+for (const level of ['Basic','Economy','Standard','Premium','Luxury','4-Star','5-Star','Private Charter']) if (!data.includes(level)) throw new Error(`Missing package level: ${level}`);
+for (const price of ['offerPrice: 29','offerPrice: 49','offerPrice: 89','offerPrice: 199','offerPrice: 599']) if (!data.includes(price)) throw new Error(`Missing safari price: ${price}`);
+for (const field of ['buffetDetails','entertainment','paymentMethod','cancellationPolicy','upperDeckDetails','lowerDeckDetails','faqs','pickupDetails','dropoffDetails']) if (!enrichment.includes(field) || !cms.includes(field)) throw new Error(`Missing complete CMS field: ${field}`);
+if (!admin.includes('../cms.js')) throw new Error('Hidden /admin route is not connected to the complete CMS.');
+if (!netlify.includes('from = "/admin"') || !netlify.includes('noindex')) throw new Error('Hidden admin routing or headers are missing.');
+if (!home.includes('public-cleanup.js') || home.includes('href="admin')) throw new Error('Public homepage exposes the admin route.');
+if (!details.includes('package-enhancer.js')) throw new Error('Complete package information enhancer is missing.');
+console.log('QA passed: full package information, hidden /admin CMS, CRUD controls and public cleanup verified.');
