@@ -1,8 +1,8 @@
 # Get Your Guide Dubai
 
-Dependency-free, admin-controlled booking website for Dubai Canal cruises, Marina cruises, private yacht charters and desert safaris.
+Admin-controlled booking website for Dubai Canal cruises, Dubai Marina cruises, private yacht charters and desert safaris.
 
-## Included package structure
+## Public package structure
 
 ### Dubai Canal and Dubai Marina
 
@@ -17,9 +17,7 @@ Dependency-free, admin-controlled booking website for Dubai Canal cruises, Marin
 
 ### Private yachts
 
-- 48 ft Private Charter
-- 60 ft Private Charter
-- 75 ft Private Charter
+Private Charter packages with flexible hourly booking and celebration add-ons.
 
 ### Desert safari
 
@@ -29,23 +27,38 @@ Dependency-free, admin-controlled booking website for Dubai Canal cruises, Marin
 - Premium Camp — AED 199
 - Private Car with Standard Camp — AED 599
 
-Reusable add-ons include Quad Bike, Dune Buggy, VIP Sitting and Premium Camp Upgrade.
+Safari add-ons include Quad Bike, Dune Buggy, VIP Sitting and Premium Camp Upgrade.
 
-## Full-control admin
+## Hidden complete CMS
 
-Open `admin.html` to:
+Open the CMS directly at:
 
-- Create, edit, duplicate, hide, reorder or delete packages
-- Manage cards, categories and package levels
-- Manage reusable add-ons and assign them to packages
-- Hide, reorder, delete or create homepage sections
-- Edit or remove header and footer sections
-- Create, edit, hide, reorder or delete navigation links
-- Edit brand, hero image, contact details, colors and social links
-- Export/import the full website as JSON
-- Reset to the original seeded packages
+```text
+/admin
+```
 
-The current version stores draft changes in browser local storage so it works instantly without a backend. Before public production use, connect the included data model to Supabase or another authenticated database and protect `admin.html`.
+The public website does not show an admin link or admin-control section. The admin route is marked `noindex`, `nofollow` and `no-store`.
+
+The CMS can:
+
+- Create, edit, preview, duplicate, hide, reorder and delete packages
+- Edit complete pricing, child and infant policies
+- Edit boat, deck, seating, AC and capacity information
+- Edit boarding location, map, meeting, pickup and drop-off information
+- Edit timings and available days
+- Edit buffet, drinks, entertainment, views, landmarks, inclusions and exclusions
+- Edit payment, cancellation, parking, important notes and FAQs
+- Assign reusable add-ons
+- Manage categories, homepage sections, navigation, header, footer and site settings
+- Export and import a complete JSON backup
+
+## Package information
+
+Package detail pages include operational information, route and views, timings, deck information, food and entertainment, pricing, policies, pickup or boarding instructions, important notes and FAQs.
+
+## Data storage
+
+The current version saves CMS changes in browser local storage. It works immediately for review and testing. Before a public multi-user launch, connect the included data model to an authenticated database such as Supabase and protect `/admin` with a login. A hidden URL and `noindex` headers are not a substitute for authentication.
 
 ## Run locally
 
@@ -57,12 +70,10 @@ python3 -m http.server 4173
 Open:
 
 - Website: `http://localhost:4173/`
-- Admin: `http://localhost:4173/admin.html`
+- CMS: `http://localhost:4173/admin/`
 
 ## Netlify
 
-The included `netlify.toml` publishes the repository root. No build command or package installation is required.
+`netlify.toml` publishes the repository root and redirects `/admin` to `/admin/`.
 
-## Before launch
-
-Replace placeholder WhatsApp/contact details and stock images. Verify package prices, routes, timings, pickup points, capacities and operator policies before accepting bookings.
+Replace placeholder contact details and stock images, and verify operator prices, routes, timings, capacities and policies before accepting bookings.
