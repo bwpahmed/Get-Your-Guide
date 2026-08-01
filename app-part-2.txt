@@ -1,0 +1,81 @@
+     </div>
+      </div>
+
+      <div class="review-wrap section-block">
+        <div class="section-heading">
+          <div><p class="eyebrow">Website architecture</p><h2>Experience first, package levels second</h2></div>
+          <p>Select Canal, Marina, Yachts or Safari, then compare the exact service level that fits your budget.</p>
+        </div>
+        <div class="architecture-card">
+          <div class="category-switcher">
+            ${categories.map((category) => `<button class="category-switch ${category.id === selectedCategoryId ? 'active' : ''}" data-category="${esc(category.id)}"><span>${category.kind === 'safari' ? '◆' : category.kind === 'yacht' ? '◈' : '◉'}</span><b>${esc(category.name)}</b><small>${esc(category.description)}</small></button>`).join('')}
+          </div>
+          <div class="connector"></div>
+          <div class="variant-grid" id="overviewVariants">
+            ${featured.map((item) => packageMiniCard(item)).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="review-wrap section-block">
+        <div class="section-heading compact"><div><p class="eyebrow">Why this structure works</p><h2>Everything important is visible before booking</h2></div></div>
+        <div class="feature-grid">
+          <article><span>01</span><h3>Package levels</h3><p>Basic, Economy, Standard, Premium, Luxury, 4-Star, 5-Star and Private Charter.</p></article>
+          <article><span>02</span><h3>Route landmarks</h3><p>Each package shows only the landmarks that genuinely apply to that route.</p></article>
+          <article><span>03</span><h3>Structured inclusions</h3><p>Included, excluded and optional services are clearly separated.</p></article>
+          <article><span>04</span><h3>Full admin control</h3><p>Create, update, hide, reorder, duplicate or remove every website item.</p></article>
+        </div>
+      </div>
+    </section>`;
+}
+
+function packageMiniCard(item) {
+  return `<article class="variant-card" data-open-package="${esc(item.id)}">
+    <div class="variant-image"><img src="${esc(item.image)}" alt="${esc(item.title)}"></div>
+    <span class="level ${levelClass(item.level)}">${esc(item.level)}</span>
+    <h3>${esc(item.title)}</h3>
+    <p>${esc(item.shortDescription)}</p>
+    <div class="mini-price"><b>${money(item.offerPrice)}</b><button data-open-package="${esc(item.id)}">View details</button></div>
+  </article>`;
+}
+
+function comparisonView() {
+  const categories = visibleCategories();
+  const category = selectedCategory();
+  const items = visiblePackages().filter((item) => item.categoryId === category.id);
+  return `
+    <section class="view ${activeView === 'comparison' ? 'active' : ''}" id="view-comparison">
+      <div class="review-wrap page-head"><p class="eyebrow">Package comparison</p><h1>Compare before you book</h1><p>Choose an experience category, then compare service level, price, duration, inclusions and booking options.</p></div>
+      <div class="review-wrap review-layout">
+        <aside class="package-list" aria-label="Experience categories">
+          ${categories.map((item) => `<button class="package-option ${item.id === category.id ? 'active' : ''}" data-category="${esc(item.id)}"><b>${esc(item.name)}</b><small>${esc(item.description)}</small></button>`).join('')}
+        </aside>
+        <div class="comparison-main">
+          <div class="package-title-card"><div><span class="level standard">${esc(category.kind)}</span><h2>${esc(category.name)}</h2><p>${esc(category.description)}</p></div><span class="status-pill">${items.length} options</span></div>
+          <div class="table-toolbar">
+            <div class="filter-tabs">${items.map((item) => `<button class="filter-tab ${item.id === selectedPackageId ? 'active' : ''}" data-open-package="${esc(item.id)}">${esc(item.level)}</button>`).join('')}</div>
+            <button class="ghost" data-go="experience">Open selected details</button>
+          </div>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table package-comparison"><thead><tr><th>Package</th><th>Price</th><th>Duration</th><th>Capacity / pickup</th><th>Top inclusions</th><th>Action</th></tr></thead>
+              <tbody>${items.map((item) => `<tr class="${item.id === selectedPackageId ? 'selected-row' : ''}">
+                <td><span class="level ${levelClass(item.level)}">${esc(item.level)}</span><b class="table-title">${esc(item.title)}</b><small>${esc(item.shortDescription)}</small></td>
+                <td><b>${money(item.offerPrice)}</b>${item.originalPrice > item.offerPrice ? `<del>${money(item.originalPrice)}</del>` : ''}</td>
+                <td>${esc(item.duration)}</td>
+                <td>${esc(item.capacity)}<small>${esc(item.boardingLocation)}</small></td>
+                <td>${(item.inclusions || []).slice(0, 3).map((entry) => `<span class="table-inclusion">✓ ${esc(entry)}</span>`).join('')}</td>
+                <td><button class="primary compact-btn" data-open-package="${esc(item.id)}">Select</button></td>
+              </tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function experienceView() {
+  const item = selectedPackage();
+  if (!item) return '';
+  const category = visibleCategories().find((entry) => entry.id === item.categoryId);
+  const siblings = visiblePackages().filter((entry) => entry.categoryId === item.categoryId);
+  const addons = data.addOns.filter((addon) => addon.visible && (item.addOnIds || []).includes(addon.id)).sort((a, b) => a.order 
