@@ -1,44 +1,68 @@
 import { cloneDefaultData } from './data.js';
 import { enrichSiteData } from './data-enrichment.js';
+import { applyCatalogBaseline } from './catalog-baseline.js';
 
-const STORAGE_KEY = 'get-your-guide-site-data-v2';
+const STORAGE_KEY = 'get-your-guide-site-data-v3';
+const LEGACY_KEY = 'get-your-guide-site-data-v2';
 
-function hydrate(raw) {
-  const enriched = enrichSiteData(raw);
-  const sourcePackages = new Map((raw.packages || []).map(item => [item.id, item]));
-  enriched.packages = enriched.packages.map(item => ({ ...item, ...(sourcePackages.get(item.id) || {}) }));
-  enriched.settings = { ...enriched.settings, ...(raw.settings || {}), adminPath: '/admin/' };
-  return enriched;
+function parseStored(value) {
+  if (!value) return null;
+  try { return JSON.parse(value); } catch { return null; }
+}
+
+function hydrate(raw, forceBaseline = false) {
+  const source = structuredClone(raw || cloneDefaultData());
+  const needsBaseline = forceBaseline || Number(source.schemaVersion || 0) < 3;
+  let next = enrichSiteData(source);
+
+  if (needsBaseline) {
+    const structural = new Map((source.packages || []).map(item => [item.id, {
+      visible:item.visible,
+      featured:item.featured,
+      order:item.order,
+      addOnIds:item.addOnIds
+    }]));
+    next = applyCatalogBaseline(next);
+    next.packages = next.packages.map(item => ({ ...item, ...(structural.get(item.id) || {}) }));
+  } else {
+    const sourcePackages = new Map((source.packages || []).map(item => [item.id, item]));
+    next.packages = next.packages.map(item => ({ ...item, ...(sourcePackages.get(item.id) || {}) }));
+    next.settings = { ...next.settings, ...(source.settings || {}) };
+  }
+
+  next.schemaVersion = 3;
+  next.settings = { ...next.settings, adminPath:'/admin/' };
+  return next;
 }
 
 export function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return hydrate(cloneDefaultData());
-  try {
-    return hydrate(JSON.parse(raw));
-  } catch {
-    return hydrate(cloneDefaultData());
-  }
+  const current = parseStored(localStorage.getItem(STORAGE_KEY));
+  if (current) return hydrate(current);
+
+  const legacy = parseStored(localStorage.getItem(LEGACY_KEY));
+  const migrated = hydrate(legacy || cloneDefaultData(), true);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+  return migrated;
 }
 
 export function saveData(data) {
-  const next = hydrate({ ...data, updatedAt: new Date().toISOString() });
+  const next = hydrate({ ...data, schemaVersion:3, updatedAt:new Date().toISOString() });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
 
 export function resetData() {
-  const next = hydrate(cloneDefaultData());
+  const next = hydrate(cloneDefaultData(), true);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
 
 export function downloadBackup(data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `get-your-guide-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `get-your-guide-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
