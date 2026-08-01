@@ -3,25 +3,33 @@ import { enrichSiteData } from './data-enrichment.js';
 
 const STORAGE_KEY = 'get-your-guide-site-data-v2';
 
+function hydrate(raw) {
+  const enriched = enrichSiteData(raw);
+  const sourcePackages = new Map((raw.packages || []).map(item => [item.id, item]));
+  enriched.packages = enriched.packages.map(item => ({ ...item, ...(sourcePackages.get(item.id) || {}) }));
+  enriched.settings = { ...enriched.settings, ...(raw.settings || {}), adminPath: '/admin/' };
+  return enriched;
+}
+
 export function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return enrichSiteData(cloneDefaultData());
+  if (!raw) return hydrate(cloneDefaultData());
   try {
-    return enrichSiteData(JSON.parse(raw));
+    return hydrate(JSON.parse(raw));
   } catch {
-    return enrichSiteData(cloneDefaultData());
+    return hydrate(cloneDefaultData());
   }
 }
 
 export function saveData(data) {
-  const next = enrichSiteData({ ...data, updatedAt: new Date().toISOString() });
+  const next = hydrate({ ...data, updatedAt: new Date().toISOString() });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
 
 export function resetData() {
-  const next = enrichSiteData(cloneDefaultData());
-  saveData(next);
+  const next = hydrate(cloneDefaultData());
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   return next;
 }
 
