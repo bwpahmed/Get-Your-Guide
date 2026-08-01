@@ -1,0 +1,1 @@
+Correction accepted: this project must use the same visual design and interaction model as the private Package Review Studio preview, not a generic tourism homepage.
