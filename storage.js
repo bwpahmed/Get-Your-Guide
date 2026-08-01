@@ -10,6 +10,16 @@ function parseStored(value) {
   try { return JSON.parse(value); } catch { return null; }
 }
 
+function bookingDefaults(item) {
+  return {
+    ...item,
+    upperDeckCharge:item.upperDeckCharge ?? 25,
+    pickupPrice:item.pickupPrice ?? 35,
+    bookingNotice:item.bookingNotice || 'Final availability and operator confirmation are required.',
+    conversionLabel:item.conversionLabel || item.slug
+  };
+}
+
 function hydrate(raw, forceBaseline = false) {
   const source = structuredClone(raw || cloneDefaultData());
   const needsBaseline = forceBaseline || Number(source.schemaVersion || 0) < 3;
@@ -19,14 +29,16 @@ function hydrate(raw, forceBaseline = false) {
     const structural = new Map((source.packages || []).map(item => [item.id, {
       visible:item.visible,
       featured:item.featured,
-      order:item.order,
-      addOnIds:item.addOnIds
+      order:item.order
     }]));
     next = applyCatalogBaseline(next);
-    next.packages = next.packages.map(item => ({ ...item, ...(structural.get(item.id) || {}) }));
+    next.packages = next.packages.map(item => {
+      const defaultAddOns = ['canal','marina'].includes(item.categoryId) ? ['birthday-decor','cake'] : item.addOnIds;
+      return bookingDefaults({ ...item, addOnIds:defaultAddOns, ...(structural.get(item.id) || {}) });
+    });
   } else {
     const sourcePackages = new Map((source.packages || []).map(item => [item.id, item]));
-    next.packages = next.packages.map(item => ({ ...item, ...(sourcePackages.get(item.id) || {}) }));
+    next.packages = next.packages.map(item => bookingDefaults({ ...item, ...(sourcePackages.get(item.id) || {}) }));
     next.settings = { ...next.settings, ...(source.settings || {}) };
   }
 
