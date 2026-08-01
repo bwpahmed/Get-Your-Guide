@@ -1,0 +1,38 @@
+- b.order);
+  const gallery = [item.image, ...(item.gallery || [])].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).slice(0, 2);
+  return `
+    <section class="view ${activeView === 'experience' ? 'active' : ''}" id="view-experience">
+      <div class="review-wrap page-head"><p class="eyebrow">Package detail</p><h1>${esc(item.title)}</h1><p>${esc(item.description)}</p></div>
+      <div class="review-wrap experience-shell">
+        <div class="experience-gallery">${gallery.map((image) => `<img src="${esc(image)}" alt="${esc(item.title)}">`).join('')}${gallery.length === 1 ? `<img src="${esc(imageFallback(item.categoryId))}" alt="${esc(category?.name || '')}">` : ''}</div>
+        <div class="experience-summary">
+          <div class="title-row"><span class="level ${levelClass(item.level)}">${esc(item.level)}</span>${(item.badges || []).map((badge) => `<span class="draft-tag">${esc(badge)}</span>`).join('')}</div>
+          <h2>${esc(item.title)}</h2>
+          <p class="meta">📍 ${esc(item.location)} • ${esc(item.boatType || category?.kind || 'Experience')}</p>
+          <p>${esc(item.shortDescription)}</p>
+          <div class="quick-facts"><div><small>Duration</small><b>${esc(item.duration)}</b></div><div><small>Capacity</small><b>${esc(item.capacity)}</b></div><div><small>Starting price</small><b>${money(item.offerPrice)}</b></div><div><small>Available</small><b>${esc(item.availableDays || 'Daily')}</b></div></div>
+        </div>
+      </div>
+      <div class="review-wrap detail-grid">
+        <section class="detail-card wide"><div class="card-head"><div><p class="eyebrow">Route section</p><h2>Landmarks on this experience</h2></div><span class="admin-chip">Admin reorderable</span></div><div class="route-line">${(item.landmarks || []).map((name, index) => `<article class="route-stop"><span class="route-dot">${index + 1}</span><h3>${esc(name)}</h3><p>${index === 0 ? 'Starting area' : index === (item.landmarks || []).length - 1 ? 'Final route point' : 'Route highlight'}</p></article>`).join('')}</div><p class="note">Routes and timings can be changed from the admin panel for every package.</p></section>
+        <section class="detail-card"><div class="card-head"><div><p class="eyebrow">Package levels</p><h2>Choose another tier</h2></div></div><div class="level-options">${siblings.map((entry) => `<button class="${entry.id === item.id ? 'active' : ''}" data-open-package="${esc(entry.id)}">${esc(entry.level)}</button>`).join('')}</div><p class="note">Selected package: ${esc(item.level)}</p></section>
+        <section class="detail-card"><div class="card-head"><div><p class="eyebrow">Operational details</p><h2>Boarding and timing</h2></div></div><div class="deck-list"><article><span>⌖</span><div><h3>Boarding location</h3><p>${esc(item.boardingLocation)}</p></div></article>${(item.timeSlots || []).slice(0, 2).map((slot) => `<article><span>◷</span><div><h3>${esc(slot.label)}</h3><p>${esc(slot.boardingTime)} boarding • ${esc(slot.sailingTime)} departure • ${esc(slot.returnTime)} return</p></div></article>`).join('')}</div></section>
+        <section class="detail-card wide"><div class="card-head"><div><p class="eyebrow">What is included</p><h2>Clear package contents</h2></div><span class="admin-chip">Admin controlled</span></div><div class="inclusion-grid">${(item.inclusions || []).map((name) => inclusionItem(name, 'included')).join('')}${(item.exclusions || []).map((name) => inclusionItem(name, 'excluded')).join('')}${addons.map((addon) => inclusionItem(`${addon.name} • +${money(addon.price)}`, 'optional', addon.id)).join('')}</div></section>
+        <section class="detail-card wide booking-card"><div><p class="eyebrow">Build your booking</p><h2>Package and optional upgrades</h2><p>${esc(item.whatsappMessage || `I want to book ${item.title}`)}</p></div><div class="booking-panel"><div class="booking-line"><span>Base package</span><b>${money(item.offerPrice)}</b></div>${addons.map((addon) => `<label class="addon-choice"><input type="checkbox" data-addon="${esc(addon.id)}" data-price="${Number(addon.price)}"><span>${esc(addon.name)}</span><b>+${money(addon.price)}</b></label>`).join('')}<div class="booking-total"><span>Estimated total</span><b id="bookingTotal">${money(item.offerPrice)}</b></div><button class="primary full-button" id="bookWhatsApp">Book on WhatsApp</button></div></section>
+      </div>
+    </section>`;
+}
+
+function inclusionItem(name, status, addonId = '') {
+  const states = { included: ['✓', 'Included'], optional: ['+', 'Optional add-on'], excluded: ['×', 'Not included'] };
+  return `<article class="inclusion-item ${status}" ${addonId ? `data-addon-card="${esc(addonId)}"` : ''}><span class="inclusion-state">${states[status][0]}</span><div><b>${esc(name)}</b><small>${states[status][1]}</small></div></article>`;
+}
+
+function workflowView() {
+  return `
+    <section class="view ${activeView === 'workflow' ? 'active' : ''}" id="view-workflow">
+      <div class="review-wrap page-head"><p class="eyebrow">Full control admin</p><h1>Control the whole website without editing code</h1><p>Packages, prices, categories, cards, sections, navigation, header, footer, images, timings and add-ons are all editable.</p></div>
+      <div class="review-wrap workflow-grid">
+        <section class="workflow-steps">
+          <article class="done"><span>1</span><div><h3>Manage packages</h3><p>Create, edit, duplicate, hide, reorder or delete any package.</p></div></article>
+          <article class="done"><span>2</span><div><h3>Manage
