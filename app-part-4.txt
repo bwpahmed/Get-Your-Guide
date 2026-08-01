@@ -1,0 +1,105 @@
+ website sections</h3><p>Header, hero, cards, custom sections and footer can be hidden or reordered.</p></div></article>
+          <article class="done"><span>3</span><div><h3>Manage add-ons</h3><p>Quad bike, buggy, VIP sitting and camp upgrades can be reused across safari packages.</p></div></article>
+          <article class="active"><span>4</span><div><h3>Preview changes</h3><p>Review the public website before you connect a production database.</p></div></article>
+          <article><span>5</span><div><h3>Publish securely</h3><p>Connect Supabase authentication and permanent storage before launch.</p></div></article>
+        </section>
+        <section class="admin-mock">
+          <div class="admin-top"><span>Get Your Guide Admin</span><span class="status-pill">Full control</span></div>
+          <div class="admin-body">
+            <label>Package title<input value="Dubai Water Canal Premium"></label>
+            <label>Package level<select><option>Basic</option><option>Economy</option><option>Standard</option><option selected>Premium</option><option>Luxury</option><option>4-Star</option><option>5-Star</option><option>Private Charter</option></select></label>
+            <label>Offer price<input value="89"></label>
+            <label>Section visibility<select><option>Visible</option><option>Hidden</option></select></label>
+            <div class="verification-box"><span>⚙</span><p><b>Everything is editable</b><br>Create, update, hide, remove and reorder packages, sections, cards, navigation, header and footer.</p></div>
+            <div class="admin-actions"><a class="secondary link-button" href="index.html">View website</a><a class="primary link-button" href="admin.html">Open full admin</a></div>
+          </div>
+        </section>
+      </div>
+    </section>`;
+}
+
+function footer() {
+  if (!footerVisible()) return '';
+  return `<footer class="site-footer review-wrap"><div><b>${esc(data.settings.brandName)}</b><p>${esc(data.settings.footerText)}</p></div><div><span>${esc(data.settings.supportPhone)}</span><span>${esc(data.settings.supportEmail)}</span></div><div><a href="${esc(data.settings.instagramUrl)}">Instagram</a><a href="${esc(data.settings.facebookUrl)}">Facebook</a><a href="admin.html">Admin</a></div></footer>`;
+}
+
+function imageFallback(categoryId) {
+  return visibleCategories().find((item) => item.id === categoryId)?.image || data.settings.heroImage;
+}
+
+function levelClass(level = '') {
+  const key = level.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  if (key === '4-star') return 'four-star';
+  if (key === '5-star') return 'five-star';
+  return key;
+}
+
+function render() {
+  applyTheme();
+  $('#app').innerHTML = `${header()}<main>${overviewView()}${comparisonView()}${experienceView()}${workflowView()}</main>${footer()}<div class="toast" id="toast"></div>`;
+  bindEvents();
+  if (activeView === 'experience') bindBooking();
+}
+
+function switchView(view) {
+  activeView = view;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openPackage(id) {
+  const item = visiblePackages().find((entry) => entry.id === id);
+  if (!item) return;
+  selectedPackageId = item.id;
+  selectedCategoryId = item.categoryId;
+  activeView = 'experience';
+  render();
+  history.replaceState(null, '', `?slug=${encodeURIComponent(item.slug)}`);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(message) {
+  const toast = $('#toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+function bindEvents() {
+  $('#mobileNav')?.addEventListener('click', () => $('.topnav')?.classList.toggle('open'));
+  $$('[data-view], [data-go]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view || button.dataset.go)));
+  $$('[data-category]').forEach((button) => button.addEventListener('click', () => {
+    selectedCategoryId = button.dataset.category;
+    const first = visiblePackages().find((item) => item.categoryId === selectedCategoryId);
+    if (first) selectedPackageId = first.id;
+    if (activeView !== 'comparison') activeView = 'comparison';
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }));
+  $$('[data-open-package]').forEach((button) => button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    openPackage(button.dataset.openPackage);
+  }));
+}
+
+function bindBooking() {
+  const item = selectedPackage();
+  if (!item) return;
+  const availableAddons = data.addOns.filter((addon) => addon.visible && (item.addOnIds || []).includes(addon.id));
+  const update = () => {
+    const checked = $$('[data-addon]:checked');
+    const total = Number(item.offerPrice || 0) + checked.reduce((sum, input) => sum + Number(input.dataset.price || 0), 0);
+    $('#bookingTotal').textContent = money(total);
+    $('#bookWhatsApp').onclick = () => {
+      const names = checked.map((input) => availableAddons.find((addon) => addon.id === input.dataset.addon)?.name).filter(Boolean);
+      const message = `${item.whatsappMessage || `Hello, I want to book ${item.title}.`}\nSelected add-ons: ${names.join(', ') || 'None'}\nEstimated total: ${money(total)}`;
+      window.open(`https://wa.me/${esc(data.settings.whatsappNumber)}?text=${encodeURIComponent(message)}`, '_blank');
+    };
+  };
+  $$('[data-addon]').forEach((input) => input.addEventListener('change', () => { update(); showToast('Estimated total updated'); }));
+  update();
+}
+
+render();
