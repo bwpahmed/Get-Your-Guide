@@ -1,0 +1,10 @@
+{
+  "name": "get-your-guide-dubai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check data.js && node --check storage.js && node --check app.js && node --check admin.js",
+    "serve": "python3 -m http.server 4173"
+  }
+}
