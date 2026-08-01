@@ -2,7 +2,9 @@ function cleanPublicAdminReferences() {
   document.querySelectorAll('a[href*="admin"], [data-view="workflow"], [data-go="workflow"], .admin-chip').forEach(node => node.remove());
   document.querySelector('#view-workflow')?.remove();
 
-  document.querySelectorAll('.review-banner .status-pill').forEach(node => { node.textContent = 'Instant WhatsApp support'; });
+  document.querySelectorAll('.review-banner .status-pill').forEach(node => {
+    if (node.textContent.trim() !== 'Instant WhatsApp support') node.textContent = 'Instant WhatsApp support';
+  });
   document.querySelectorAll('.feature-grid article').forEach(card => {
     const heading = card.querySelector('h3');
     if (heading?.textContent.trim() === 'Full admin control') {
@@ -22,6 +24,13 @@ function cleanPublicAdminReferences() {
   });
 }
 
-const observer = new MutationObserver(cleanPublicAdminReferences);
+let queued = false;
+const queueCleanup = () => {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => { queued = false; cleanPublicAdminReferences(); });
+};
+
+const observer = new MutationObserver(queueCleanup);
 observer.observe(document.documentElement,{childList:true,subtree:true});
 cleanPublicAdminReferences();
