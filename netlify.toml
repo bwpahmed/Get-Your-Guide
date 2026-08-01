@@ -1,8 +1,21 @@
 [build]
   publish = "."
 
+[[redirects]]
+  from = "/admin"
+  to = "/admin/"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-store, max-age=0"
+    Referrer-Policy = "same-origin"
+
 [[headers]]
   for = "/admin.html"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"
-    Cache-Control = "no-store"
+    Cache-Control = "no-store, max-age=0"
