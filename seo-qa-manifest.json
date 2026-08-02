@@ -1,0 +1,20 @@
+{
+  "homepageSections": [
+    "Best Dinner Cruises & Tours in Dubai",
+    "Need Help Choosing?",
+    "Group Discounts Available!",
+    "A Simpler Way to Book Dubai Experiences",
+    "What Makes Our Cruises Best?",
+    "Dhow Cruises & Yachts",
+    "Ready to Book Your Perfect Dhow Cruise?"
+  ],
+  "landingPages": [
+    "/dhow-cruise-dubai/",
+    "/dubai-canal-cruise/",
+    "/dubai-marina-cruise/",
+    "/dubai-creek-cruise/",
+    "/new-year-dubai-cruise/"
+  ],
+  "cmsRoute": "/admin/",
+  "layoutChanged": false
+}
