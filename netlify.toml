@@ -19,3 +19,16 @@
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Cache-Control = "no-store, max-age=0"
+
+[[headers]]
+  for = "/legacy-studio.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-store, max-age=0"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
