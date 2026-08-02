@@ -11,6 +11,8 @@ if (home) {
   const categories = site.categories.filter(item => item.visible).sort((a,b) => (a.order || 0) - (b.order || 0));
   const featured = packages.filter(item => item.featured).slice(0,5);
   const byCategory = id => packages.filter(item => item.categoryId === id);
+  const requestedCategory = new URLSearchParams(location.search).get('category');
+  const initialCategory = categories.some(item => item.id === requestedCategory) ? requestedCategory : 'canal';
   const lowest = id => {
     const values = byCategory(id).map(item => Number(item.offerPrice || 0)).filter(Boolean);
     return values.length ? Math.min(...values) : 0;
@@ -63,14 +65,14 @@ if (home) {
   }
 
   function updateTimes() {
-    const selected = packages.find(item => item.id === experienceSelect?.value) || featured[0] || packages[0];
+    const selected = packages.find(item => String(item.id) === String(experienceSelect?.value)) || featured[0] || packages[0];
     if (!timeSelect || !selected) return;
-    timeSelect.innerHTML = (selected.timeSlots || []).map(slot => `<option value="${esc(slot.label)} — ${esc(slot.sailingTime || slot.boardingTime)}">${esc(slot.label)} · ${esc(slot.sailingTime || slot.boardingTime)}</option>`).join('') || '<option>Confirm on WhatsApp</option>';
+    timeSelect.innerHTML = (selected.timeSlots || []).map(slot => `<option value="${esc(slot.label)} — ${esc(slot.sailingTime || slot.boardingTime)}">${esc(slot.label)} · ${esc(slot.sailingTime || slot.boardingTime)}</option>`).join('') || '<option value="Confirm on WhatsApp">Confirm on WhatsApp</option>';
   }
 
   if (experienceSelect) {
     experienceSelect.innerHTML = categories.map(category => `<optgroup label="${esc(category.name)}">${byCategory(category.id).map(item => `<option value="${esc(item.id)}">${esc(item.title)} · ${money(item.offerPrice)}</option>`).join('')}</optgroup>`).join('');
-    const initial = featured[0] || packages[0];
+    const initial = byCategory(initialCategory)[0] || featured[0] || packages[0];
     if (initial) experienceSelect.value = initial.id;
     experienceSelect.addEventListener('change', updateTimes);
     updateTimes();
@@ -85,7 +87,7 @@ if (home) {
 
   quickForm?.addEventListener('submit', event => {
     event.preventDefault();
-    const selected = packages.find(item => item.id === experienceSelect.value);
+    const selected = packages.find(item => String(item.id) === String(experienceSelect.value));
     if (!selected) return;
     const data = new FormData(quickForm);
     const message = [
@@ -105,7 +107,7 @@ if (home) {
   });
 
   compareButtons.forEach(button => button.addEventListener('click', () => renderPackages(button.dataset.approvedFilter)));
-  renderPackages('canal');
+  renderPackages(initialCategory);
 
   const menu = document.querySelector('#approvedMobileMenu');
   document.querySelector('#approvedMenuButton')?.addEventListener('click', () => menu?.classList.toggle('open'));
