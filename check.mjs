@@ -5,13 +5,13 @@ const read = path => readFileSync(path,'utf8');
 const required = [
   'data.js','data-enrichment.js','catalog-baseline.js','storage.js','app.js','app-part-1.txt','app-part-2.txt','app-part-3.txt','app-part-4.txt',
   'package-enhancer.js','booking-form.js','public-cleanup.js','home-sections.js','home-actions.js','home-sections.css',
-  'home-category-links.js','home-category-links.css','truthful-guides.js','desert-safari-page.js',
+  'home-category-links.js','home-category-links.css','hero-slider.js','hero-slider.css','site-chrome.js','site-chrome.css','truthful-guides.js','desert-safari-page.js',
   'cms.js','cms-booking-fields.js','admin/index.html','index.html','package.html','netlify.toml','styles.css','cms-enhancements.css','client-ready.css',
-  'seo-content-data.js','seo-content.js','seo-content.css','seo-content-cms.js','seo-content-cms.css',
+  'seo-content-data.js','seo-content.js','seo-content.css','seo-content-cms.js','seo-content-cms.css','booking-policies/index.html',
   'dhow-cruise-dubai/index.html','dubai-canal-cruise/index.html','dubai-marina-cruise/index.html','dubai-creek-cruise/index.html','new-year-dubai-cruise/index.html','desert-safari-dubai/index.html'
 ];
 for (const file of required) read(file);
-for (const file of ['data.js','data-enrichment.js','catalog-baseline.js','storage.js','app.js','package-enhancer.js','booking-form.js','public-cleanup.js','home-sections.js','home-actions.js','home-category-links.js','truthful-guides.js','desert-safari-page.js','cms.js','cms-booking-fields.js','seo-content-data.js','seo-content.js','seo-content-cms.js']) {
+for (const file of ['data.js','data-enrichment.js','catalog-baseline.js','storage.js','app.js','package-enhancer.js','booking-form.js','public-cleanup.js','home-sections.js','home-actions.js','home-category-links.js','hero-slider.js','site-chrome.js','truthful-guides.js','desert-safari-page.js','cms.js','cms-booking-fields.js','seo-content-data.js','seo-content.js','seo-content-cms.js']) {
   execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 }
 
@@ -21,6 +21,8 @@ const booking = read('booking-form.js');
 const home = read('index.html');
 const homeSections = read('home-sections.js');
 const categoryLinks = read('home-category-links.js');
+const slider = read('hero-slider.js');
+const chrome = read('site-chrome.js');
 const details = read('package.html');
 const appPart1 = read('app-part-1.txt');
 const appPart2 = read('app-part-2.txt');
@@ -55,24 +57,35 @@ for (const route of ['/dubai-canal-cruise/','/dubai-marina-cruise/','/dubai-cree
 }
 if (categoryLinks.includes('Private Yacht Charter')) throw new Error('Yacht is still displayed in the confirmed five-card homepage category row.');
 
+for (const feature of ['AUTOPLAY_DELAY','home-hero-slider-track','data-hero-slide','pointerdown','prefers-reduced-motion']) {
+  if (!slider.includes(feature)) throw new Error(`Missing hero slider feature: ${feature}`);
+}
+
+for (const item of ['Canal','Marina','Creek','New Year','Desert Safari','Compare Packages','Booking Policies','Ameerat Al Bahr Floating Restaurant L.L.C.','global-menu-toggle','global-site-footer']) {
+  if (!chrome.includes(item)) throw new Error(`Incomplete shared header/footer: ${item}`);
+}
+if (chrome.includes('href="admin') || chrome.includes('/admin/')) throw new Error('Shared public header/footer exposes admin.');
+
 if (!cms.includes("field('featured','Featured package'") || !cms.includes("'heroImage'")) throw new Error('CMS cannot control featured packages or the hero image.');
-if (!home.includes('app.js') || !home.includes('home-sections.js') || !home.includes('home-category-links.js')) throw new Error('Homepage is not using the original app plus confirmed extensions.');
+if (!home.includes('app.js') || !home.includes('home-sections.js') || !home.includes('home-category-links.js') || !home.includes('hero-slider.js') || !home.includes('site-chrome.js')) throw new Error('Homepage is missing the original app or confirmed extensions.');
 if (home.includes('approved-home.js') || home.includes('approved-home.css') || home.includes('seo-content.js')) throw new Error('Unapproved replacement homepage code is still loaded.');
 if (home.includes('href="admin')) throw new Error('Public homepage exposes admin.');
 
-if (!details.includes('app.js') || !details.includes('package-enhancer.js') || !details.includes('booking-form.js')) throw new Error('Original package detail layout or booking form is missing.');
+if (!details.includes('app.js') || !details.includes('package-enhancer.js') || !details.includes('booking-form.js') || !details.includes('site-chrome.js')) throw new Error('Original package detail layout, booking form or shared chrome is missing.');
 if (details.includes('product-longform.js')) throw new Error('Package page still loads duplicated long-form content.');
 
 for (const slug of ['dubai-canal-cruise','dubai-marina-cruise','dubai-creek-cruise','new-year-dubai-cruise']) {
   const page = read(`${slug}/index.html`);
-  if (!page.includes(`data-seo-page="${slug}"`) || !page.includes('../seo-content.js') || !page.includes('../truthful-guides.js')) {
-    throw new Error(`Approved landing page behavior is not restored: ${slug}`);
+  if (!page.includes(`data-seo-page="${slug}"`) || !page.includes('../seo-content.js') || !page.includes('../truthful-guides.js') || !page.includes('../site-chrome.js')) {
+    throw new Error(`Approved landing page or shared header/footer is missing: ${slug}`);
   }
 }
 const safariPage = read('desert-safari-dubai/index.html');
 const safariRenderer = read('desert-safari-page.js');
-if (!safariPage.includes('../desert-safari-page.js') || !safariRenderer.includes("categoryId === 'safari'") || !safariRenderer.includes('Dubai Desert Safari Packages')) throw new Error('Complete Desert Safari landing page is missing.');
+if (!safariPage.includes('../desert-safari-page.js') || !safariPage.includes('../site-chrome.js') || !safariRenderer.includes("categoryId === 'safari'") || !safariRenderer.includes('Dubai Desert Safari Packages')) throw new Error('Complete Desert Safari landing page or shared chrome is missing.');
+if (!read('dhow-cruise-dubai/index.html').includes('../site-chrome.js')) throw new Error('Cruise guide is missing shared header/footer.');
+if (!read('booking-policies/index.html').includes('Cancellation & Refund') || !read('booking-policies/index.html').includes('../site-chrome.js')) throw new Error('Linked booking policy page is incomplete.');
 if (!read('truthful-guides.js').includes('Verified Dubai Creek Packages') || !read('truthful-guides.js').includes('New Year 2027 Packages')) throw new Error('Truthful Creek and New Year behavior is missing.');
 
 if (!netlify.includes('from = "/admin"') || !netlify.includes('noindex')) throw new Error('Hidden admin routing or headers are missing.');
-console.log('QA passed: approved Canal, Marina, Creek and New Year pages restored; five homepage categories and complete Desert Safari page verified.');
+console.log('QA passed: hero slider, complete shared header/footer, policy links, restored landing pages and package flow verified.');
