@@ -1,0 +1,1 @@
+This route renders the editable New Year cruise guide from `seo-content-data.js`. Publish actual package prices, confirmed fireworks zones, vessel names, menus, pickup rules and cancellation terms only after operator verification.
