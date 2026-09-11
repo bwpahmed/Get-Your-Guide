@@ -1,0 +1,5 @@
+---
+description: Canonical repository AI policy
+alwaysApply: true
+---
+Before any task, read and follow root `AGENTS.md`. For non-trivial work also read `AI_TEAM.md`. `AGENTS.md` is the single source of truth.
