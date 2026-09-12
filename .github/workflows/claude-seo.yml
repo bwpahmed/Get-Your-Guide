@@ -1,0 +1,73 @@
+name: Claude SEO Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: Website URL to audit (leave blank to use SEO_SITE_URL)
+        required: false
+        type: string
+      audit_mode:
+        description: Claude SEO audit mode
+        required: true
+        default: audit
+        type: choice
+        options: [audit, technical, schema, geo, content, page]
+  schedule:
+    - cron: '17 2 * * 1'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DEFAULT_SITE_URL: ''
+
+jobs:
+  seo-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve audit configuration
+        id: config
+        shell: bash
+        env:
+          INPUT_URL: ${{ github.event.inputs.site_url }}
+          INPUT_MODE: ${{ github.event.inputs.audit_mode }}
+          REPO_SITE_URL: ${{ vars.SEO_SITE_URL }}
+        run: |
+          url="$INPUT_URL"; [ -n "$url" ] || url="$REPO_SITE_URL"; [ -n "$url" ] || url="$DEFAULT_SITE_URL"
+          mode="$INPUT_MODE"; [ -n "$mode" ] || mode="audit"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          if [ -z "$url" ]; then echo "No site URL configured. Set SEO_SITE_URL or provide site_url manually."; fi
+      - name: Check Claude authentication
+        id: auth
+        shell: bash
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ] || [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; else echo "ready=false" >> "$GITHUB_OUTPUT"; echo "Add ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN to Actions secrets."; fi
+      - name: Run Claude SEO
+        if: steps.auth.outputs.ready == 'true' && steps.config.outputs.url != ''
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: https://github.com/AgriciDaniel/claude-seo.git
+          plugins: claude-seo@agricidaniel-claude-seo
+          prompt: |
+            Read and follow AGENTS.md first. Audit only; do not edit application code, database, workflows, deployment config, or production state.
+            Use AgriciDaniel/claude-seo. Target: ${{ steps.config.outputs.url }}. Mode: ${{ steps.config.outputs.mode }}.
+            Run the matching `/seo` command; run `/seo setup` and `/seo doctor` first if needed.
+            Save Markdown results under `seo-reports/${{ github.run_id }}/`. Preserve FULL-AUDIT-REPORT.md and ACTION-PLAN.md when produced.
+      - name: Upload SEO reports
+        if: always() && steps.auth.outputs.ready == 'true' && steps.config.outputs.url != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-seo-${{ github.run_id }}
+          path: seo-reports/${{ github.run_id }}/
+          if-no-files-found: warn
+          retention-days: 30
