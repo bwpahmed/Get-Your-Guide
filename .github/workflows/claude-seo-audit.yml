@@ -1,0 +1,140 @@
+name: Claude SEO Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: Public website URL to audit
+        required: true
+        type: string
+      mode:
+        description: SEO audit mode
+        required: true
+        default: audit
+        type: choice
+        options:
+          - audit
+          - technical
+          - content
+          - schema
+          - geo
+          - images
+          - page
+  schedule:
+    - cron: '17 2 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  seo-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve configuration
+        id: preflight
+        env:
+          INPUT_SITE_URL: ${{ github.event.inputs.site_url }}
+          INPUT_MODE: ${{ github.event.inputs.mode }}
+          SCHEDULED_SITE_URL: ${{ vars.CLAUDE_SEO_SITE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          site_url="${INPUT_SITE_URL:-${SCHEDULED_SITE_URL:-}}"
+          mode="${INPUT_MODE:-audit}"
+
+          if [[ -z "$site_url" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No site URL configured. For scheduled audits set repository variable CLAUDE_SEO_SITE_URL; manual runs provide site_url as an input."
+            exit 0
+          fi
+
+          if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANTHROPIC_API_KEY secret is not configured, so the audit was safely skipped."
+            exit 0
+          fi
+
+          case "$mode" in
+            audit|technical|content|schema|geo|images|page) ;;
+            *) echo "Unsupported mode: $mode" >&2; exit 2 ;;
+          esac
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "site_url=$site_url" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Claude Code
+        if: steps.preflight.outputs.ready == 'true'
+        run: npm install --global @anthropic-ai/claude-code
+
+      - name: Install pinned Claude SEO plugin
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          claude plugin marketplace add AgriciDaniel/claude-seo@v2.3.1 --scope local
+          claude plugin install claude-seo@agricidaniel-claude-seo --scope local
+
+      - name: Prepare Claude SEO runtime
+        if: steps.preflight.outputs.ready == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          claude -p "/seo setup" \
+            --allowedTools "Bash,Read,Write,Glob,Grep,WebFetch,WebSearch,Agent" \
+            --output-format text | tee claude-seo-setup.log
+
+      - name: Run Claude SEO audit
+        if: steps.preflight.outputs.ready == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SITE_URL: ${{ steps.preflight.outputs.site_url }}
+          SEO_MODE: ${{ steps.preflight.outputs.mode }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          claude -p "/seo ${SEO_MODE} ${SITE_URL}" \
+            --allowedTools "Bash,Read,Write,Glob,Grep,WebFetch,WebSearch,Agent" \
+            --output-format text | tee claude-seo-report.md
+
+      - name: Add report to job summary
+        if: steps.preflight.outputs.ready == 'true' && always()
+        shell: bash
+        run: |
+          {
+            echo "## Claude SEO Audit"
+            echo
+            echo "- URL: ${{ steps.preflight.outputs.site_url }}"
+            echo "- Mode: ${{ steps.preflight.outputs.mode }}"
+            echo "- Plugin: AgriciDaniel/claude-seo v2.3.1"
+            echo
+            if [[ -f claude-seo-report.md ]]; then
+              head -n 250 claude-seo-report.md
+            else
+              echo "Audit report was not produced. Inspect the workflow logs."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload SEO report
+        if: steps.preflight.outputs.ready == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-seo-report-${{ github.run_number }}
+          path: |
+            claude-seo-report.md
+            claude-seo-setup.log
+          if-no-files-found: warn
+          retention-days: 30
