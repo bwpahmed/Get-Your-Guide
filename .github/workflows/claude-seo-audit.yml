@@ -1,140 +1,42 @@
-name: Claude SEO Audit
-
+name: Claude SEO Readiness and Audit
 on:
   workflow_dispatch:
     inputs:
-      site_url:
-        description: Public website URL to audit
-        required: true
-        type: string
-      mode:
-        description: SEO audit mode
-        required: true
-        default: audit
-        type: choice
-        options:
-          - audit
-          - technical
-          - content
-          - schema
-          - geo
-          - images
-          - page
-  schedule:
-    - cron: '17 2 * * 1'
-
-permissions:
-  contents: read
-
+      run_audit: {description: "Run Claude-powered audit", required: true, default: false, type: boolean}
+      site_url: {description: "Live URL; blank uses SEO_SITE_URL", required: false, type: string}
+      mode: {description: "SEO command", required: true, default: audit, type: choice, options: [audit, technical, page, schema, geo, content, local, images]}
+  schedule: [{cron: "23 3 * * 1"}]
+  push:
+    paths: [".claude-seo.lock", "SEO_WORKFLOW.md", "scripts/install-claude-seo.sh", "scripts/install-claude-seo.ps1", ".github/workflows/claude-seo-audit.yml"]
+permissions: {contents: read}
+env: {CLAUDE_SEO_TAG: v2.3.1, CLAUDE_SEO_COMMIT: 55c7914a3ed2869b217b5d5f360a4e7ba28b4848}
 jobs:
-  seo-audit:
+  readiness:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Resolve configuration
-        id: preflight
-        env:
-          INPUT_SITE_URL: ${{ github.event.inputs.site_url }}
-          INPUT_MODE: ${{ github.event.inputs.mode }}
-          SCHEDULED_SITE_URL: ${{ vars.CLAUDE_SEO_SITE_URL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: bash scripts/install-claude-seo.sh
+  audit:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_audit }}
+    needs: readiness
+    runs-on: ubuntu-latest
+    env: {ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}", SEO_SITE_URL: "${{ vars.SEO_SITE_URL }}"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - run: npm install --global @anthropic-ai/claude-code
+      - run: bash scripts/install-claude-seo.sh
+      - id: target
         shell: bash
         run: |
-          set -euo pipefail
-          site_url="${INPUT_SITE_URL:-${SCHEDULED_SITE_URL:-}}"
-          mode="${INPUT_MODE:-audit}"
-
-          if [[ -z "$site_url" ]]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No site URL configured. For scheduled audits set repository variable CLAUDE_SEO_SITE_URL; manual runs provide site_url as an input."
-            exit 0
-          fi
-
-          if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::ANTHROPIC_API_KEY secret is not configured, so the audit was safely skipped."
-            exit 0
-          fi
-
-          case "$mode" in
-            audit|technical|content|schema|geo|images|page) ;;
-            *) echo "Unsupported mode: $mode" >&2; exit 2 ;;
-          esac
-
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-          echo "site_url=$site_url" >> "$GITHUB_OUTPUT"
-          echo "mode=$mode" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Node.js
-        if: steps.preflight.outputs.ready == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install Claude Code
-        if: steps.preflight.outputs.ready == 'true'
-        run: npm install --global @anthropic-ai/claude-code
-
-      - name: Install pinned Claude SEO plugin
-        if: steps.preflight.outputs.ready == 'true'
-        shell: bash
+          url="${{ inputs.site_url }}"; [[ -n "$url" ]] || url="${SEO_SITE_URL:-}"; [[ -n "$url" ]] || exit 2; [[ -n "${ANTHROPIC_API_KEY:-}" ]] || exit 3; echo "url=$url" >> "$GITHUB_OUTPUT"
+      - shell: bash
         run: |
-          set -euo pipefail
-          claude plugin marketplace add AgriciDaniel/claude-seo@v2.3.1 --scope local
-          claude plugin install claude-seo@agricidaniel-claude-seo --scope local
-
-      - name: Prepare Claude SEO runtime
-        if: steps.preflight.outputs.ready == 'true'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          claude -p "/seo setup" \
-            --allowedTools "Bash,Read,Write,Glob,Grep,WebFetch,WebSearch,Agent" \
-            --output-format text | tee claude-seo-setup.log
-
-      - name: Run Claude SEO audit
-        if: steps.preflight.outputs.ready == 'true'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          SITE_URL: ${{ steps.preflight.outputs.site_url }}
-          SEO_MODE: ${{ steps.preflight.outputs.mode }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          claude -p "/seo ${SEO_MODE} ${SITE_URL}" \
-            --allowedTools "Bash,Read,Write,Glob,Grep,WebFetch,WebSearch,Agent" \
-            --output-format text | tee claude-seo-report.md
-
-      - name: Add report to job summary
-        if: steps.preflight.outputs.ready == 'true' && always()
-        shell: bash
-        run: |
-          {
-            echo "## Claude SEO Audit"
-            echo
-            echo "- URL: ${{ steps.preflight.outputs.site_url }}"
-            echo "- Mode: ${{ steps.preflight.outputs.mode }}"
-            echo "- Plugin: AgriciDaniel/claude-seo v2.3.1"
-            echo
-            if [[ -f claude-seo-report.md ]]; then
-              head -n 250 claude-seo-report.md
-            else
-              echo "Audit report was not produced. Inspect the workflow logs."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload SEO report
-        if: steps.preflight.outputs.ready == 'true' && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: claude-seo-report-${{ github.run_number }}
-          path: |
-            claude-seo-report.md
-            claude-seo-setup.log
-          if-no-files-found: warn
-          retention-days: 30
+          mkdir -p seo-reports; claude -p "/seo ${{ inputs.mode }} ${{ steps.target.outputs.url }}\nAudit only; do not edit repository files. Return Markdown with evidence and P0/P1/P2 actions." --output-format text --max-turns 30 --allowedTools "Bash(*)" "WebFetch" "WebSearch" "Read" "Task" "Agent" --disallowedTools "Edit" "Write" > "seo-reports/${{ inputs.mode }}.md"
+      - uses: actions/upload-artifact@v4
+        with: {name: "claude-seo-${{ inputs.mode }}-${{ github.run_id }}", path: seo-reports/, if-no-files-found: error}
