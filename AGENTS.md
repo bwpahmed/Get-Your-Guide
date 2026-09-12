@@ -5,9 +5,10 @@ This file is the single source of truth for AI coding agents in this repository.
 ## Mandatory start protocol
 1. Read this file before changing code.
 2. For non-trivial work, read `AI_TEAM.md`.
-3. Inspect the existing implementation, tests, config, and relevant docs first.
-4. Identify and extend the current source of truth; do not create parallel business logic, duplicate state/config, or a second workflow unless explicitly requested.
-5. Keep scope to the smallest safe change; do not modify unrelated code.
+3. For non-trivial work, read `AI_CAPABILITY_STACK.md` and select only the relevant imported capability/skill/agent.
+4. Inspect the existing implementation, tests, config, and relevant docs first.
+5. Identify and extend the current source of truth; do not create parallel business logic, duplicate state/config, or a second workflow unless explicitly requested.
+6. Keep scope to the smallest safe change; do not modify unrelated code.
 
 ## Change rules
 Preserve unrelated behavior. Prefer small reversible root-cause fixes. Reuse existing components/services/models/utilities/validation/config/patterns. Avoid unrelated refactors, dependency upgrades, formatting sweeps, or file moves. Do not silently remove features, validation, logging, history, compatibility behavior, or safety checks. Treat auth, permissions, payments, personal data, schemas/migrations, secrets, integrations, browser automation, and deployment as high-risk. Never invent credentials, production data, or test results. Never deploy production, run destructive database operations, delete user data, rotate secrets, or alter live infrastructure unless explicitly requested. Preserve backward compatibility unless a breaking change is approved.
@@ -19,4 +20,4 @@ Run relevant available checks: tests, lint, typecheck, build, migration validati
 Report objective/root cause, files changed, behavior preserved, checks actually run, and remaining risks/manual steps/migrations/deployment actions.
 
 ## Instruction hierarchy
-System/platform instructions and the user's current explicit request outrank repository instructions. Within this repo, `AGENTS.md` outranks `AI_TEAM.md` and adapters.
+System/platform instructions and the user's current explicit request outrank repository instructions. Within this repo, `AGENTS.md` outranks `AI_TEAM.md`, `AI_CAPABILITY_STACK.md`, imported upstream packs, and adapters.
