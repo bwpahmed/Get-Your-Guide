@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Get-Your-Guide Runtime Architecture",
+    "output": ".ai/architecture/system.html",
+    "quality_profile": "standard"
+  },
+  "components": [
+    {
+      "id": "visitor",
+      "type": "external",
+      "label": "Visitor",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        110,
+        58
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Public Runtime",
+      "sublabel": "app.js + app-part-*",
+      "pos": [
+        250,
+        240
+      ],
+      "size": [
+        165,
+        64
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "database",
+      "label": "Browser Draft State",
+      "sublabel": "localStorage v3",
+      "pos": [
+        500,
+        200
+      ],
+      "size": [
+        165,
+        64
+      ]
+    },
+    {
+      "id": "seed",
+      "type": "backend",
+      "label": "Seed / Baseline Data",
+      "sublabel": "data.js + enrichment",
+      "pos": [
+        500,
+        60
+      ],
+      "size": [
+        165,
+        60
+      ]
+    },
+    {
+      "id": "cms",
+      "type": "frontend",
+      "label": "Private CMS",
+      "sublabel": "cms.js",
+      "pos": [
+        250,
+        470
+      ],
+      "size": [
+        145,
+        60
+      ]
+    },
+    {
+      "id": "supabase",
+      "type": "database",
+      "label": "Supabase Schema",
+      "sublabel": "site_documents (not proven active)",
+      "pos": [
+        780,
+        470
+      ],
+      "size": [
+        190,
+        64
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "visitor",
+      "to": "app"
+    },
+    {
+      "from": "app",
+      "to": "storage"
+    },
+    {
+      "from": "seed",
+      "to": "storage"
+    },
+    {
+      "from": "cms",
+      "to": "storage"
+    },
+    {
+      "from": "cms",
+      "to": "supabase",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Current runtime truth",
+      "items": [
+        "app.js reads storage.loadData()",
+        "cms.js saves browser-local draft"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Do not assume",
+      "items": [
+        "Supabase migration exists",
+        "active CMS sync must be proven before treating it as authority"
+      ]
+    }
+  ]
+}
