@@ -11,5 +11,8 @@ Use the minimum specialist coverage required. If subagents are unavailable, perf
 
 Routing: small fix = owner + QA; database/auth/security = backend + security + QA; cross-cutting = architecture + owner + QA; deployment/automation = DevOps + security when relevant + QA; risky multi-area = final reviewer.
 
+## Mandatory routing context
+Read `AI_PROJECT_MAP.md` before specialist selection and resolve the current authoritative implementation. Do not delegate around an unverified storage/CMS assumption.
+
 ## Extended capability stack
-For non-trivial work, read `AI_CAPABILITY_STACK.md` after this file. Load only the capability that materially helps the task: ECC for engineering specialists/skills, Spec Kit for durable specification-driven work, AgentMemory for authorized persistent-memory workflows, Harness Engineering for long-running/context/verification design, and AEO only for explicitly approved Moltbook promotion. `AGENTS.md` remains authoritative over every imported pack.
+For non-trivial work, read `AI_CAPABILITY_STACK.md` after this file. Load only the capability that materially helps the task: ECC for engineering specialists/skills, Spec Kit for durable specification-driven work, AgentMemory for authorized persistent-memory workflows, Harness Engineering for long-running/context/verification design, Graphify for code relationships, Archify for source-backed visuals, and AEO only for explicitly approved Moltbook promotion. `AGENTS.md` remains authoritative over every imported pack.
