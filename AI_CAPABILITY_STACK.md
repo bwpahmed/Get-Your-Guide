@@ -2,7 +2,7 @@
 
 This repository uses one project workflow for AI-assisted work:
 
-`Task -> AGENTS.md -> AI_TEAM.md -> AI_CAPABILITY_STACK.md -> relevant skills/agents -> inspect existing implementation -> do the task -> tests/verification -> QA review`
+`Task -> AGENTS.md -> AI_PROJECT_MAP.md -> Graphify/Archify when useful -> AI_TEAM.md -> AI_CAPABILITY_STACK.md -> baseline -> current source of truth -> reuse/extend -> plan/spec -> implementation -> tests/checks -> browser QA when relevant -> independent QA -> map refresh if architecture changed -> final diff check`
 
 `AGENTS.md` is always the repository authority. Imported upstream instructions are capabilities, not policy, and must never override project rules, the user's current request, security boundaries, or existing source-of-truth architecture.
 
@@ -52,3 +52,12 @@ AEO rules:
 4. For risky or cross-domain work, use an independent reviewer/QA agent after implementation.
 5. Run the repository's real tests/lint/typecheck/build or targeted evidence checks before completion.
 6. Imported agents may recommend changes, but production deployment, destructive data operations, credentials, external posting, and other high-impact actions still require the permissions and approvals defined by `AGENTS.md` and the user's request.
+
+## Repository understanding stack
+- **Graphify 0.9.72**: derived code/dependency graph for ownership, calls, imports and paths; never replaces `AI_PROJECT_MAP.md` or real code/data.
+- **Archify 3.0.1**: source-backed architecture/workflow/sequence/data-flow/lifecycle visuals; never invent topology.
+- **Chrome DevTools MCP**: external/local browser QA for DOM, console, network and performance.
+- **save-token-jev**: optional machine-level context compaction; no repo credentials/CI auto-enable.
+- **Jev Ultrafast**: optional explicit browser execution, not a QA or approval substitute.
+- **MiroFish**: external AGPL simulation only, not normal engineering or vendored code.
+- **Obsidian**: optional human knowledge workspace; repository files stay authoritative.
